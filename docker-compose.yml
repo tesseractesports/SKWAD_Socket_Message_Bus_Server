@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # Socket.io Message Bus Server
+  message-bus:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - CORS_ORIGIN=*
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_LEVEL=info
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - message-bus-network
+
+  # Redis for horizontal scaling (Socket.io adapter)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - message-bus-network
+    command: redis-server --appendonly yes
+
+  # Additional message-bus instance for horizontal scaling demo
+  message-bus-2:
+    build: .
+    ports:
+      - "3001:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - CORS_ORIGIN=*
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_LEVEL=info
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - message-bus-network
+
+volumes:
+  redis-data:
+
+networks:
+  message-bus-network:
+    driver: bridge
