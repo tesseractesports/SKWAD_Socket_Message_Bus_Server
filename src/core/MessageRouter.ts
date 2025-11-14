@@ -33,6 +33,8 @@ export class MessageRouter extends EventEmitter {
    * Route a message to appropriate targets based on bucket subscriptions
    */
   routeMessage(message: Message): RouteTarget[] {
+
+   // console.log('Routing message:', JSON.stringify(message, null, 2) );
     // Validate bucket exists
     if (!this.bucketManager.bucketExists(message.bucketId)) {
       this.emit('route:error', {
@@ -41,7 +43,7 @@ export class MessageRouter extends EventEmitter {
       });
       return [];
     }
-
+     
     // Get all subscribers for this bucket
     const subscriberIds = this.bucketManager.getSubscribers(message.bucketId);
 
@@ -77,7 +79,7 @@ export class MessageRouter extends EventEmitter {
   /**
    * Broadcast to all subscribers of a bucket
    */
-  broadcastToBucket(bucketId: string, message: Message): RouteTarget[] {
+  broadcastToBucket(bucketId: string, _message: Message): RouteTarget[] {
     if (!this.bucketManager.bucketExists(bucketId)) {
       return [];
     }

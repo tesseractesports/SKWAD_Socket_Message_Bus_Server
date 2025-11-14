@@ -131,8 +131,10 @@ export class MessageBusServer {
     });
 
     // Message routing events
+    
     this.messageRouter.on('message:routed', ({ message, targetCount }) => {
-      console.log(`📨 Message routed: ${message.messageId} -> ${targetCount} targets`);
+      //console.log(`📨 Message routed: ${message.messageId} -> ${targetCount} targets`);
+      console.log(`📨 Message routed: ${message.bucketId} -> ${message.messageType} -> ${targetCount} targets`);
     });
 
     this.messageRouter.on('route:error', ({ message, error }) => {

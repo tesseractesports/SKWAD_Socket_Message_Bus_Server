@@ -108,7 +108,7 @@ export class BucketManager extends EventEmitter {
    * Unsubscribe a client from all buckets
    */
   unsubscribeFromAll(clientId: string): void {
-    for (const [bucketId, subscribers] of this.bucketSubscribers.entries()) {
+    for (const [_bucketId, subscribers] of this.bucketSubscribers.entries()) {
       subscribers.delete(clientId);
     }
   }
