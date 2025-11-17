@@ -9,7 +9,10 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "example": "node examples/client-example.js",
+    "example:multi": "node examples/multi-client-example.js",
+    "example:ts": "tsx examples/client-example.ts"
   },
   "keywords": [
     "socket.io",
@@ -21,6 +24,7 @@
   "license": "MIT",
   "dependencies": {
     "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {

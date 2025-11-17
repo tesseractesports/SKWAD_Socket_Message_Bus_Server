@@ -85,12 +85,59 @@ socket.on('message', (data) => {
 });
 ```
 
-## Example Client
+## Running Examples
 
-See `examples/client-example.ts` for a complete example:
+The project includes example clients to help you get started:
 
-```typescript
-import { io } from 'socket.io-client';
+### Single Client Example
+
+Run a single client that joins rooms and sends messages:
+
+```bash
+# JavaScript version
+npm run example
+
+# TypeScript version
+npm run example:ts
+```
+
+This example shows:
+- Connecting to the server
+- Joining multiple rooms
+- Sending messages to rooms
+- Receiving messages from other clients
+- Leaving rooms
+
+### Multi-Client Demo
+
+Run a demo with 3 clients chatting in the same room:
+
+```bash
+npm run example:multi
+```
+
+This demonstrates:
+- Multiple clients in the same room
+- Real-time message broadcasting
+- Clients joining different rooms
+- Colored console output for each client
+
+## Quick Start
+
+**Terminal 1 - Start the server:**
+```bash
+npm run dev
+```
+
+**Terminal 2 - Run a client example:**
+```bash
+npm run example
+```
+
+Or create your own client:
+
+```javascript
+const { io } = require('socket.io-client');
 
 const socket = io('http://localhost:3000');
 
@@ -132,11 +179,13 @@ npm run typecheck
 ```
 .
 ├── src/
-│   ├── MessageBusServer.ts    # Main server
-│   ├── config.ts              # Configuration
-│   └── index.ts               # Entry point
+│   ├── MessageBusServer.ts          # Main server (88 lines)
+│   ├── config.ts                    # Configuration
+│   └── index.ts                     # Entry point
 ├── examples/
-│   └── client-example.ts      # Client example
+│   ├── client-example.js            # Single client example (JavaScript)
+│   ├── client-example.ts            # Single client example (TypeScript)
+│   └── multi-client-example.js      # Multiple clients demo
 ├── package.json
 └── tsconfig.json
 ```
