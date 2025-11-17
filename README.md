@@ -1,87 +1,18 @@
-# Socket.io Message Bus Server
+# Simple Socket.io Message Bus Server
 
-A clean, modern, stateless Socket.io-based Message Bus Server designed for routing real-time messages between Extractors, Transformers, and Consumers. This server is intentionally "dumb" and contains no game logic - it only handles routing and pub/sub functionality.
+A super simple Socket.io server that lets clients connect, join rooms, and exchange messages. No complex features, no client types, no buckets - just pure room-based messaging.
 
-## Architecture Overview
+## What It Does
 
-```
-┌─────────────┐
-│  Extractor  │───┐
-└─────────────┘   │
-                  │    ┌──────────────────────┐
-┌─────────────┐   ├───▶│  Message Bus Server  │
-│  Extractor  │───┤    │   (Socket.io Hub)    │
-└─────────────┘   │    └──────────────────────┘
-                  │              │
-┌─────────────┐   │              │
-│  Extractor  │───┘              │
-└─────────────┘                  │
-                                 ▼
-                  ┌──────────────────────────┐
-                  │   Dynamic Buckets        │
-                  │   (Game Sessions)        │
-                  └──────────────────────────┘
-                                 │
-                ┌────────────────┼────────────────┐
-                ▼                ▼                ▼
-         ┌─────────────┐  ┌─────────────┐  ┌──────────┐
-         │ Transformer │  │ Transformer │  │ Consumer │
-         └─────────────┘  └─────────────┘  └──────────┘
-```
+- Clients connect to the server
+- Clients join rooms by sending room names
+- Clients can join multiple rooms
+- Clients send messages to rooms
+- Server relays messages to all clients in the room
 
-## Key Features
-
-- **Stateless Design**: No persistent state, scales horizontally
-- **Dynamic Buckets**: Creates routing channels based on game metadata
-- **Pub/Sub Pattern**: Publishers and subscribers for each bucket
-- **Real-time Routing**: Routes messages between ecosystem actors
-- **Redis Adapter**: Optional Redis support for multi-instance deployments
-- **TypeScript**: Fully typed for safety and developer experience
-- **Docker Ready**: Containerized with Docker Compose orchestration
-
-## Core Components
-
-### 1. BucketManager
-Manages dynamic buckets (logical groupings for game sessions):
-- Creates buckets based on Extractor metadata
-- Manages subscriptions per bucket
-- Broadcasts bucket availability to subscribers
-- Cleans up buckets when Extractors disconnect
-
-### 2. MessageRouter
-Routes messages between actors:
-- Validates message structure
-- Routes based on bucket subscriptions
-- Tracks message throughput
-- Emits routing events for monitoring
-
-### 3. ConnectionManager
-Manages client connections:
-- Tracks connected clients by type (Extractor, Transformer, Consumer)
-- Maintains client metadata and subscriptions
-- Handles registration and disconnection
-- Provides connection statistics
-
-## Client Types
-
-### Extractor
-- Creates buckets with game metadata
-- Publishes game data to buckets
-- Auto-cleanup on disconnect
-
-### Transformer
-- Subscribes to buckets of interest
-- Receives game data from Extractors
-- Publishes transformed data back to buckets
-
-### Consumer
-- Subscribes to buckets
-- Receives both raw and transformed data
-- Read-only participants
+That's it!
 
 ## Installation
-
-### Using npm
 
 ```bash
 npm install
@@ -89,242 +20,96 @@ npm run build
 npm start
 ```
 
-### Using Docker
-
-```bash
-# Single instance
-docker build -t message-bus .
-docker run -p 3000:3000 message-bus
-
-# Horizontal scaling with Redis
-docker-compose up
-```
-
 ## Configuration
 
-Create a `.env` file (see `.env.example`):
+Create a `.env` file:
 
 ```env
-# Server Configuration
 PORT=3000
-NODE_ENV=production
-
-# Redis Configuration (for horizontal scaling)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-# CORS Configuration
 CORS_ORIGIN=*
-
-# Logging
-LOG_LEVEL=info
 ```
 
-## API / Event Protocol
+## API / Events
 
-### Connection Flow
-
-1. **Connect** to server
-2. **Register** as a client type:
+### Connect
 ```typescript
-socket.emit('register', {
-  clientType: 'extractor' | 'transformer' | 'consumer',
-  metadata: { /* optional */ }
-})
+import { io } from 'socket.io-client';
 
-socket.on('registered', (clientInfo) => {
-  console.log('Registered:', clientInfo)
-})
+const socket = io('http://localhost:3000');
+
+socket.on('connect', () => {
+  console.log('Connected:', socket.id);
+});
 ```
 
-### Extractor Events
-
-**Create Bucket**
+### Join a Room
 ```typescript
-socket.emit('create_bucket', {
-  bucketId: 'game-session-123',
-  gameType: 'poker',
-  gameVersion: '2.0',
-  region: 'us-west',
-  additionalMetadata: {}
-})
+socket.emit('join-room', 'game-room-1');
 
-socket.on('bucket_created', ({ bucketId, success }) => {
-  console.log('Bucket created:', bucketId)
-})
+socket.on('joined-room', (data) => {
+  console.log('Joined:', data.room);
+});
 ```
 
-**Send Message**
+### Join Multiple Rooms
+```typescript
+socket.emit('join-room', 'game-room-1');
+socket.emit('join-room', 'chat-room-1');
+socket.emit('join-room', 'lobby-room');
+```
+
+### Leave a Room
+```typescript
+socket.emit('leave-room', 'game-room-1');
+
+socket.on('left-room', (data) => {
+  console.log('Left:', data.room);
+});
+```
+
+### Send a Message to a Room
 ```typescript
 socket.emit('message', {
-  messageId: 'msg-123',
-  messageType: 'game_data',
-  bucketId: 'game-session-123',
-  sourceClientId: socket.id,
-  sourceClientType: 'extractor',
-  timestamp: Date.now(),
-  payload: { /* game data */ }
-})
+  room: 'game-room-1',
+  message: { text: 'Hello!', data: { foo: 'bar' } }
+});
 ```
 
-### Transformer/Consumer Events
-
-**Subscribe to Bucket**
+### Receive Messages from a Room
 ```typescript
-socket.emit('subscribe_bucket', {
-  bucketId: 'game-session-123'
-})
-
-socket.on('message_ack', (ack) => {
-  console.log('Subscribed:', ack)
-})
+socket.on('message', (data) => {
+  console.log('From:', data.from);        // Socket ID of sender
+  console.log('Room:', data.room);        // Room name
+  console.log('Message:', data.message);  // Your message data
+  console.log('Time:', data.timestamp);   // Timestamp
+});
 ```
 
-**Receive Messages**
-```typescript
-socket.on('message', (message) => {
-  console.log('Received:', message)
-  // Process message
-})
-```
+## Example Client
 
-**Listen for Bucket Availability**
-```typescript
-socket.on('bucket_available', (availability) => {
-  console.log('New bucket:', availability.bucketId)
-  // Optionally auto-subscribe
-})
-
-socket.on('bucket_unavailable', (availability) => {
-  console.log('Bucket closed:', availability.bucketId)
-})
-```
-
-### System Events
-
-**Heartbeat**
-```typescript
-socket.emit('heartbeat')
-socket.on('heartbeat', ({ timestamp }) => {
-  console.log('Pong:', timestamp)
-})
-```
-
-**Stats**
-```typescript
-socket.emit('stats')
-socket.on('stats', (stats) => {
-  console.log('Server stats:', stats)
-})
-```
-
-## Message Flow Examples
-
-### Example 1: Extractor → Transformer → Consumer
+See `examples/client-example.ts` for a complete example:
 
 ```typescript
-// Extractor creates bucket
-extractor.emit('create_bucket', {
-  bucketId: 'poker-table-42',
-  gameType: 'poker'
-})
+import { io } from 'socket.io-client';
 
-// Transformer subscribes
-transformer.emit('subscribe_bucket', { bucketId: 'poker-table-42' })
+const socket = io('http://localhost:3000');
 
-// Consumer subscribes
-consumer.emit('subscribe_bucket', { bucketId: 'poker-table-42' })
+socket.on('connect', () => {
+  console.log('Connected:', socket.id);
+  socket.emit('join-room', 'my-room');
+});
 
-// Extractor sends game data
-extractor.emit('message', {
-  messageId: 'msg-1',
-  messageType: 'game_data',
-  bucketId: 'poker-table-42',
-  sourceClientId: extractor.id,
-  sourceClientType: 'extractor',
-  timestamp: Date.now(),
-  payload: { hand: [...], pot: 100 }
-})
+socket.on('joined-room', (data) => {
+  socket.emit('message', {
+    room: 'my-room',
+    message: { text: 'Hello everyone!' }
+  });
+});
 
-// Transformer receives, processes, and sends back
-transformer.on('message', (msg) => {
-  const transformed = processData(msg.payload)
-
-  transformer.emit('message', {
-    messageId: 'msg-2',
-    messageType: 'transformed_data',
-    bucketId: 'poker-table-42',
-    sourceClientId: transformer.id,
-    sourceClientType: 'transformer',
-    timestamp: Date.now(),
-    payload: transformed
-  })
-})
-
-// Consumer receives both messages
-consumer.on('message', (msg) => {
-  console.log('Received:', msg)
-})
+socket.on('message', (data) => {
+  console.log('Received:', data.message);
+});
 ```
-
-## Horizontal Scaling
-
-The server is designed to be stateless and scales horizontally using Redis as a message adapter:
-
-```bash
-# Start multiple instances
-docker-compose up --scale message-bus=3
-```
-
-All instances share the same Redis backend, ensuring messages are routed across all server instances.
-
-## Monitoring
-
-The server emits events for monitoring:
-
-```typescript
-bucketManager.on('bucket:available', (availability) => {
-  // Monitor bucket creation
-})
-
-messageRouter.on('message:routed', ({ message, targetCount }) => {
-  // Monitor message throughput
-})
-
-connectionManager.on('client:connected', (clientInfo) => {
-  // Monitor connections
-})
-```
-
-## Project Structure
-
-```
-.
-├── src/
-│   ├── core/
-│   │   ├── BucketManager.ts       # Bucket lifecycle management
-│   │   ├── ConnectionManager.ts   # Client connection tracking
-│   │   └── MessageRouter.ts       # Message routing logic
-│   ├── types/
-│   │   └── index.ts               # TypeScript definitions
-│   ├── MessageBusServer.ts        # Main server orchestration
-│   ├── config.ts                  # Configuration loader
-│   └── index.ts                   # Entry point
-├── Dockerfile                     # Container definition
-├── docker-compose.yml             # Multi-container orchestration
-├── package.json
-└── tsconfig.json
-```
-
-## Design Principles
-
-1. **Stateless**: No persistent state, all routing is ephemeral
-2. **Dumb Server**: No game logic, only routing
-3. **Horizontally Scalable**: Add more instances with Redis adapter
-4. **Type Safe**: Full TypeScript coverage
-5. **Event-Driven**: Everything is event-based for flexibility
-6. **Clean Separation**: Core components are independent and testable
 
 ## Development
 
@@ -340,49 +125,22 @@ npm run build
 
 # Type check
 npm run typecheck
-
-# Clean build artifacts
-npm run clean
 ```
 
-## Production Deployment
+## Project Structure
 
-### Single Instance
-```bash
-npm run build
-NODE_ENV=production PORT=3000 npm start
 ```
-
-### Kubernetes (example)
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: message-bus
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: message-bus
-  template:
-    metadata:
-      labels:
-        app: message-bus
-    spec:
-      containers:
-      - name: message-bus
-        image: message-bus:latest
-        env:
-        - name: REDIS_HOST
-          value: redis-service
-        - name: PORT
-          value: "3000"
+.
+├── src/
+│   ├── MessageBusServer.ts    # Main server
+│   ├── config.ts              # Configuration
+│   └── index.ts               # Entry point
+├── examples/
+│   └── client-example.ts      # Client example
+├── package.json
+└── tsconfig.json
 ```
 
 ## License
 
 MIT
-
-## Contributing
-
-This is a reference architecture. Feel free to extend and customize for your specific use case.

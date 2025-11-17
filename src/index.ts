@@ -1,5 +1,5 @@
 /**
- * Socket.io Message Bus Server
+ * Simple Socket.io Message Bus Server
  * Main entry point
  */
 
@@ -8,15 +8,10 @@ import { config } from './config.js';
 
 async function main() {
   console.log('🚀 Starting Socket.io Message Bus Server...');
-  console.log(`📊 Environment: ${config.nodeEnv}`);
 
   const server = new MessageBusServer({
     port: config.port,
-    corsOrigin: config.corsOrigin,
-    redisHost: config.redisHost,
-    redisPort: config.redisPort,
-    redisPassword: config.redisPassword,
-    enableRedis: config.enableRedis
+    corsOrigin: config.corsOrigin
   });
 
   try {

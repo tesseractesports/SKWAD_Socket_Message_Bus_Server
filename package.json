@@ -1,7 +1,7 @@
 {
   "name": "socketio-message-bus-server",
   "version": "1.0.0",
-  "description": "A stateless, horizontally-scalable Socket.io Message Bus Server for routing real-time messages between Extractors, Transformers, and Consumers",
+  "description": "A simple Socket.io server for routing real-time messages between clients in rooms",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -15,15 +15,12 @@
     "socket.io",
     "message-bus",
     "real-time",
-    "pub-sub",
-    "microservice"
+    "rooms"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "socket.io": "^4.7.2",
-    "socket.io-redis": "^6.1.1",
-    "ioredis": "^5.3.2",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
