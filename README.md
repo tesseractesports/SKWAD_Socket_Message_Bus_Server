@@ -85,13 +85,117 @@ socket.on('message', (data) => {
 });
 ```
 
+## Message Types
+
+The server doesn't enforce any message structure - you can send ANY data you want! However, here are recommended message type patterns for common use cases:
+
+### Chat Messages
+```javascript
+socket.emit('message', {
+  room: 'chat-room',
+  message: {
+    type: 'chat',
+    text: 'Hello everyone!',
+    sender: 'Alice',
+    timestamp: Date.now()
+  }
+});
+```
+
+### Game Events
+```javascript
+socket.emit('message', {
+  room: 'game-room',
+  message: {
+    type: 'game_event',
+    event: 'player_action',
+    action: 'bet',
+    amount: 100,
+    playerId: socket.id,
+    timestamp: Date.now()
+  }
+});
+```
+
+### Game State Updates
+```javascript
+socket.emit('message', {
+  room: 'game-room',
+  message: {
+    type: 'game_state',
+    gameId: 'match-123',
+    state: {
+      round: 2,
+      pot: 500,
+      activePlayers: 4,
+      currentPlayer: 'player-id-123'
+    },
+    timestamp: Date.now()
+  }
+});
+```
+
+### Notifications
+```javascript
+socket.emit('message', {
+  room: 'notifications',
+  message: {
+    type: 'notification',
+    level: 'info',        // info, success, warning, error
+    title: 'New Achievement',
+    body: 'You won 10 games!',
+    timestamp: Date.now()
+  }
+});
+```
+
+### System Messages
+```javascript
+socket.emit('message', {
+  room: 'game-room',
+  message: {
+    type: 'system',
+    action: 'round_complete',
+    data: {
+      winner: 'Alice',
+      winAmount: 500
+    },
+    timestamp: Date.now()
+  }
+});
+```
+
+### Custom Message Types
+Create your own message types for any use case:
+```javascript
+socket.emit('message', {
+  room: 'analytics',
+  message: {
+    type: 'player_stats',
+    playerId: socket.id,
+    stats: {
+      handsPlayed: 50,
+      winRate: 0.64,
+      totalWinnings: 5000
+    },
+    timestamp: Date.now()
+  }
+});
+```
+
+**Key Points:**
+- The server is **"dumb"** - it doesn't validate or process message content
+- You can use **any message structure** you want
+- The `type` field is just a convention to help clients handle messages
+- All examples above are just patterns - not requirements!
+
 ## Running Examples
 
-The project includes example clients to help you get started:
+The project includes example clients demonstrating **different message types**:
 
 ### Single Client Example
 
-Run a single client that joins rooms and sends messages:
+Run a single client that demonstrates various message types:
 
 ```bash
 # JavaScript version
@@ -103,24 +207,41 @@ npm run example:ts
 
 This example shows:
 - Connecting to the server
-- Joining multiple rooms
-- Sending messages to rooms
-- Receiving messages from other clients
+- Joining multiple rooms (game, chat, notifications)
+- Sending **6 different message types**: chat, game_event, game_state, notification, system, custom_analytics
+- Receiving and handling different message types
 - Leaving rooms
+
+**Message types demonstrated:**
+- `chat` - Text messages
+- `game_event` - Game actions (player_joined, player_action)
+- `game_state` - Game state updates
+- `notification` - User notifications (info, success)
+- `system` - System messages
+- `custom_analytics` - Custom data structures
 
 ### Multi-Client Demo
 
-Run a demo with 3 clients chatting in the same room:
+Run a demo with 3 clients exchanging different message types:
 
 ```bash
 npm run example:multi
 ```
 
 This demonstrates:
-- Multiple clients in the same room
-- Real-time message broadcasting
-- Clients joining different rooms
+- Multiple clients in the same rooms (poker-table-1, lobby-chat)
+- **10 different messages** showcasing all message types
+- Real-time message broadcasting between clients
+- Type-specific message formatting with emojis
 - Colored console output for each client
+
+**Watch the demo cycle through:**
+1. Chat messages between players
+2. Game events (player joined, actions)
+3. Game state updates (round progression)
+4. Notifications (info, success levels)
+5. System messages (round complete)
+6. Custom message types (player stats)
 
 ## Quick Start
 
