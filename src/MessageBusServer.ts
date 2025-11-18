@@ -59,15 +59,27 @@ export class MessageBusServer {
       });
 
       // Client sends a message to a room
-      socket.on('message', (data: { room: string; message: any }) => {
-        console.log(`📨 Message from ${socket.id} to room ${data.room}`);
+      socket.on('message', (data: any) => {
+        console.log(`📨 Message received from ${socket.id}`);
+        console.log(`   Data:`, JSON.stringify(data, null, 2));
+        console.log(`   Room: ${data.room}`);
+        console.log(`   Message type: ${data.messageType || 'none'}`);
+
+        if (!data.room) {
+          console.error(`❌ No room specified in message from ${socket.id}`);
+          return;
+        }
+
         // Send to all clients in the room (including sender)
         this.io.to(data.room).emit('message', {
           from: socket.id,
           room: data.room,
           message: data.message,
+          messageType: data.messageType,
           timestamp: Date.now()
         });
+
+        console.log(`✓ Message sent to room ${data.room}`);
       });
 
       // Client disconnects
